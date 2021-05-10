@@ -12,11 +12,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 
+# load packages
 pacman::p_load(tidyverse)
 
-setwd("C:/Users/ninai/Docs/Uni/4. semester/Social and Cultural Dynamics in Cognition/Exam")
+# for working directory troubles
+#setwd("C:/Users/ninai/Docs/Uni/4. semester/Social and Cultural Dynamics in Cognition/Exam/SocCult_ExamProj")
 
-d <- read_csv("exam_data/ESS1e06.6/ESS1e06.6_F1.csv") %>% 
+
+# load data
+d <- read_csv("../exam_data/ESS1e06.6/ESS1e06.6_F1.csv") %>% 
   mutate(
     cntry = as_factor(cntry)
   ) %>% 
@@ -55,6 +59,5 @@ d <- read_csv("exam_data/ESS1e06.6/ESS1e06.6_F1.csv") %>%
          pspwght, # 
          pweight
          )
-levels(d$cntry)
 
 ```
