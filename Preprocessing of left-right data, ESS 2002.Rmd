@@ -7,10 +7,6 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-
-
-```{r}
 
 # load packages
 pacman::p_load(tidyverse)
@@ -18,46 +14,114 @@ pacman::p_load(tidyverse)
 # for working directory troubles
 #setwd("C:/Users/ninai/Docs/Uni/4. semester/Social and Cultural Dynamics in Cognition/Exam/SocCult_ExamProj")
 
+```
+
+
+```{r load data}
 
 # load data
-d <- read_csv("../exam_data/ESS1e06.6/ESS1e06.6_F1.csv") %>% 
-  mutate(
-    cntry = as_factor(cntry)
-  ) %>% 
-  select(proddate,
-         cntry,
-         ppltrst,
-         pplfair,
-         pplhlp,
-         ginveco,
-         gincdif,
-         needtru,
-         rlgblg,
-         rlgdnm,
-         rlgblge,
-         rlgdnme,
-         rlgdgr,
-         discpol, # Discuss politics/current affairs, how often
-         impsppl, # To be a good citizen: how important to support people worse off
-         impopin, # To be a good citizen: how important to form independent opinion
-         empl, # Employment status
-         smbtjob, # Get a similar or better job with another employer
-         domicil, # Domicile, respondent's description
-         edulvla, # Highest level of education
-         eisced, # Highest level of education, ES - ISCED
-         # NOTE: There are also education level measures by individual country - but they are complex to compare
-         mainact, # Main activity last 7 days (work, education, unemployed, etc.)
-         mnactic, # Main activity, last 7 days. All respondents. Post coded --------> seems to include all countries compared to mainact
-         hincfel, # Feeling about household's income nowadays'
-         imprich, # Important to be rich, have money and expensive things
-         ipeqopt, # Important that people are treated equally and have equal opportunities
-         ipudrst, # Important to understand different people
-         impfree, # Important to make own decisions and be free
-         iphlppl, # Important to help people and care for others well-being
-         ipstrgv, # Important that government is strong and ensures safety
-         dweight, # Designer weights
-         pspwght, # 
-         pweight
-         )
+raw_data <- read_csv("exam_data/ESS1e06.6/ESS1e06.6_F1.csv")
+
+# select relevant data
+data <- raw_data %>% 
+  mutate(cntry = as_factor(cntry)) %>%
+  select(
+    inwdd,
+    # Day of month of interview
+    inwmm,
+    # Month of interview
+    inwyr,
+    # Year of interview
+    cntry,
+    # Country
+    lrscale,
+    # Placement on left right scale
+    
+# Inequality relevant variables
+    empl,
+    # Employment status
+    smbtjob,
+    # Get a similar or better job with another employer
+    domicil,
+    # Domicile, respondent's description
+    edulvla,
+    # Highest level of education
+    eisced,
+    # Highest level of education, ES - ISCED ------> not familiar with the scale !!
+    mainact,
+    # Main activity last 7 days (work, education, unemployed, etc.)
+    mnactic,
+    # Main activity, last 7 days. All respondents. Post coded ------> seems to include all countries compared to mainact
+    hincfel,
+    # Feeling about household's income nowadays'
+    
+# Cooperation relevant variables
+    ppltrst,
+    # Most people can be trusted or you can't be too careful
+    pplfair,
+    # Most people try to take advantage of you, or try to be fair
+    pplhlp,
+    # Most of the time people helpful or mostly looking out for themselves
+    discpol,
+    # Discuss politics/current affairs, how often
+    impsppl,
+    # To be a good citizen: how important to support people worse off
+    impopin,
+    # To be a good citizen: how important to form independent opinion
+    ipudrst,
+    # Important to understand different people
+    impfree,
+    # Important to make own decisions and be free
+    
+# Left-right opinion relevant variables
+    ginveco,
+    # The less government intervenes in economy, the better for country
+    gincdif,
+    # Government should reduce differences in income levels
+    needtru,
+    # Employees need strong trade unions to protect work conditions/wages
+    imprich,
+    # Important to be rich, have money and expensive things
+    ipeqopt,
+    # Important that people are treated equally and have equal opportunities
+    iphlppl,
+    # Important to help people and care for others well-being
+    ipstrgv,
+    # Important that government is strong and ensures safety
+    
+# Religion relevant variables
+    rlgblg,
+    # Belonging to particular religion or denomination
+    rlgdnm,
+    # Religion or denomination belonging to at present
+    rlgblge,
+    # Ever belonging to particular religion or denomination
+    rlgdnme,
+    # Religion or denomination belonging to in the past
+    rlgdgr,
+    # How religious are you
+    
+# Weights
+    dweight,
+    # Designer weights
+    pspwght,
+    # Post-Stratification weights
+    pweight
+    # Population weights
+  )
 
 ```
+
+```{r plot the data}
+
+data %>%
+  filter(cntry == "SI") %>% 
+  ggplot() +
+  aes(x = lrscale, color = cntry, fill = cntry) +
+  geom_bar() +
+  coord_cartesian(xlim = c(0, 10))
+
+
+```
+
+
