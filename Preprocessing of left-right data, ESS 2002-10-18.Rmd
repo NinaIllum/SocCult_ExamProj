@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 # load packages
-pacman::p_load(tidyverse)
+pacman::p_load(tidyverse, plyr)
 
 # for working directory troubles
 #setwd("C:/Users/ninai/Docs/Uni/4. semester/Social and Cultural Dynamics in Cognition/Exam/SocCult_ExamProj")
@@ -25,6 +25,8 @@ raw_data02 <- read_csv("exam_data/ESS1e06.6/ESS1e06.6_F1.csv")
 # select relevant data
 data02 <- raw_data02 %>% 
   select(
+    essround,
+    edition,
     idno,
     # Respondent's identification number
     inwdd,
@@ -48,7 +50,7 @@ data02 <- raw_data02 %>%
     edulvla,
     # Highest level of education
     eisced,
-    # Highest level of education, ES - ISCED ------> not familiar with the scale !!
+    # Highest level of education, ES - ISCED ------> the ESS scale
     mainact,
     # Main activity last 7 days (work, education, unemployed, etc.)
     mnactic,
@@ -124,18 +126,20 @@ data02 <- raw_data02 %>%
 ```{r load data, 2010}
 
 # load data
-raw_data10 <- read_csv("exam_data/ESS5e03.4/ESS5e03.4.csv")
+raw_data10 <- read_csv("exam_data/ESS5e03.4/ESS5e03.4_F1.csv")
 
 # select relevant data
 data10 <- raw_data10 %>% 
   select(
+    essround,
+    edition,
     idno,
     # Respondent's identification number
-    inwdd,
+    inwdds,
     # Day of month of interview
-    inwmm,
+    inwmms,
     # Month of interview
-    inwyr,
+    inwyys,
     # Year of interview
     cntry,
     # Country
@@ -143,16 +147,16 @@ data10 <- raw_data10 %>%
     # Placement on left right scale
     
 # Inequality relevant variables
-    empl,
+    #empl,
     # Employment status
     #smbtjob,
     # Get a similar or better job with another employer -> not in other dataset
     domicil,
     # Domicile, respondent's description
-    edulvla,
+    edulvlb,
     # Highest level of education
     eisced,
-    # Highest level of education, ES - ISCED ------> not familiar with the scale !!
+    # Highest level of education, ES - ISCED ------> the ESS scale
     mainact,
     # Main activity last 7 days (work, education, unemployed, etc.)
     mnactic,
@@ -171,7 +175,7 @@ data10 <- raw_data10 %>%
     # Discuss politics/current affairs, how often -> not in other dataset
     #impsppl,
     # To be a good citizen: how important to support people worse off -> not in other dataset
-    impopin,
+    #impopin,
     # To be a good citizen: how important to form independent opinion
     ipudrst,
     # Important to understand different people
@@ -179,11 +183,11 @@ data10 <- raw_data10 %>%
     # Important to make own decisions and be free
     
 # Left-right opinion relevant variables
-    ginveco,
+    #ginveco,
     # The less government intervenes in economy, the better for country
     gincdif,
     # Government should reduce differences in income levels
-    needtru,
+    #needtru,
     # Employees need strong trade unions to protect work conditions/wages
     imprich,
     # Important to be rich, have money and expensive things
@@ -216,10 +220,10 @@ data10 <- raw_data10 %>%
   ) %>% 
   mutate(
     cntry = as_factor(cntry),
-    date = inwdd,
-    month = inwmm,
-    year = inwyr,
-    edulvl = edulvla
+    date = inwdds,
+    month = inwmms,
+    year = inwyys,
+    edulvl = edulvlb
     )
 
 ```
@@ -233,6 +237,8 @@ raw_data18 <- read_csv("exam_data/ESS9e03.1/ESS9e03.1_F1.csv")
 # select relevant data
 data18 <- raw_data18 %>%
   select(
+    essround,
+    edition,
     idno,
     # Respondent's identification number
     inwdds,
@@ -254,7 +260,7 @@ data18 <- raw_data18 %>%
     edulvlb,
     # Highest level of education
     eisced,
-    # Highest level of education, ES - ISCED ------> not familiar with the scale !!
+    # Highest level of education, ES - ISCED ------> the ESS scale
     mainact,
     # Main activity last 7 days (work, education, unemployed, etc.)
     mnactic,
@@ -322,10 +328,18 @@ data18 <- raw_data18 %>%
 
 ```
 
+```{r eyeball plots of data, eval=FALSE, include=FALSE}
 
-```{r plot the data}
+data02 %>%
+  #subset(cntry == "SI" | cntry == "DK") %>% 
+  ggplot() +
+  aes(x = lrscale, color = cntry, fill = cntry) +
+  geom_bar() +
+  coord_cartesian(xlim = c(0, 10)) + 
+  facet_wrap(vars(cntry))
 
-data %>%
+
+data10 %>%
   #subset(cntry == "SI" | cntry == "DK") %>% 
   ggplot() +
   aes(x = lrscale, color = cntry, fill = cntry) +
@@ -342,4 +356,113 @@ data18 %>%
   facet_wrap(vars(cntry))
 
 ```
+
+
+```{r identify countries}
+
+cntrys_02 <- c(levels(data02$cntry))
+cntrys_10 <- c(levels(data10$cntry))
+cntrys_18 <- c(levels(data18$cntry))
+
+# trying to create a function to make this more smoothly...
+# cntrys_list <- filter(cntrys_02 %in% cntrys_10)
+# cntrys_list[sapply(cntrys_02, function(x) any(words %in% x))]
+
+# create list fo countries in the 2002 data
+#cntrys_18 <- c(levels(data18$cntry))
+
+# filter out countries from 2010 not in 2018 data
+data10 <- data10 %>% 
+  filter(
+    cntry %in% cntrys_02
+  ) %>% 
+  filter(
+    cntry %in% cntrys_18
+  )
+
+# create list with updated countries in the updated 2010 data
+#cntrys_10 <- c(levels(data10$cntry))
+
+# filter out countries from 2018 not in 2010 data
+data18 <- data18 %>% 
+  filter(
+    cntry %in% cntrys_10
+  ) %>% 
+  filter(
+    cntry %in% cntrys_02
+  )
+
+# create list with updated countries in 2018 data
+#cntrys_18 <- c(levels(data18$cntry))
+
+# filter out countries from 2002 not in the updated 2018 data
+data02 <- data02 %>% 
+  filter(
+    cntry %in% cntrys_10
+  ) %>% 
+  filter(
+    cntry %in% cntrys_18
+  )
+
+```
+
+
+```{r merge data}
+
+# merged data with all variables (some are N/As in the different surveys)
+data_merged <- rbind.fill(data02, data10, data18) %>% 
+  within(rm(inwdd,
+            inwmm,
+            inwyr,
+            inwdds,
+            inwmms,
+            inwyys,
+            edulvla,
+            edulvlb)) %>% 
+  mutate(
+    essround = as_factor(essround),
+    edition = as_factor(edition),
+  )
+
+# simple dataset with only the essential variables and no N/As
+data_merged_simpl <- data_merged %>% 
+  select(
+    essround,
+    edition,
+    idno,
+    date,
+    month,
+    year,
+    cntry,
+    lrscale,
+    edulvl,
+    eisced
+    )
+
+levels(data_merged_simpl$cntry)
+
+```
+
+
+```{r plot merged data}
+
+data_merged_simpl %>%
+  group_by(essround) %>% 
+  ggplot() +
+  aes(x = cntry, fill = essround) +
+  geom_bar()
+
+```
+
+
+```{r remove N/As}
+
+# either have to remove all N/As or at least change their coding (e.g. "9999") to N/As
+
+
+```
+
+
+
+
 
