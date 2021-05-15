@@ -20,7 +20,7 @@ pacman::p_load(tidyverse, plyr)
 ```{r load data, 2002}
 
 # load data
-raw_data02 <- read_csv("exam_data/ESS1e06.6/ESS1e06.6_F1.csv")
+raw_data02 <- as.tibble(read_csv("exam_data/ESS1e06.6/ESS1e06.6_F1.csv"))
 
 # select relevant data
 data02 <- raw_data02 %>% 
@@ -126,7 +126,7 @@ data02 <- raw_data02 %>%
 ```{r load data, 2010}
 
 # load data
-raw_data10 <- read_csv("exam_data/ESS5e03.4/ESS5e03.4_F1.csv")
+raw_data10 <- as.tibble(read_csv("exam_data/ESS5e03.4/ESS5e03.4_F1.csv"))
 
 # select relevant data
 data10 <- raw_data10 %>% 
@@ -232,7 +232,7 @@ data10 <- raw_data10 %>%
 ```{r load data, 2018}
 
 # load data
-raw_data18 <- read_csv("exam_data/ESS9e03.1/ESS9e03.1_F1.csv")
+raw_data18 <- as.tibble(read_csv("exam_data/ESS9e03.1/ESS9e03.1_F1.csv"))
 
 # select relevant data
 data18 <- raw_data18 %>%
@@ -328,7 +328,116 @@ data18 <- raw_data18 %>%
 
 ```
 
-```{r eyeball plots of data, eval=FALSE, include=FALSE}
+```{r load gini-data}
+
+# load data
+gini_data <- as.tibble(read_csv("exam_data/DP_LIVE_14052021101600112.csv")) %>% 
+  select(LOCATION,
+         TIME,
+         Value) %>% 
+  pivot_wider(names_from = TIME, values_from = Value) %>% 
+  select(LOCATION,
+         "2002",
+         "2003",
+         "2010",
+         "2011",
+         "2018") #%>% 
+  #na.omit()
+# load gini data from second source
+#gini_data2 <- read.csv("exam_data/API_SI.POV.GINI_DS2_en_csv_v2_2357065/API_SI.POV.GINI_DS2_en_csv_v2_2357065.csv", sep = ",")
+
+# problematic csv-file so doing some manual loading of relevant rows without headers
+gini_data2 = read.csv(
+  "exam_data/API_SI.POV.GINI_DS2_en_csv_v2_2357065/API_SI.POV.GINI_DS2_en_csv_v2_2357065_edited3.csv",
+  skip = 5,
+  header = F)
+
+# manually adding the headers
+colnames(gini_data2) = (read.csv(
+  "exam_data/API_SI.POV.GINI_DS2_en_csv_v2_2357065/API_SI.POV.GINI_DS2_en_csv_v2_2357065_edited3.csv",
+  skip = 4,
+  header = F,
+  nrows = 1,
+  as.is = T)
+  )
+
+gini_data2_simpl <- gini_data2 %>% 
+  filter(grepl('Belgium|Switzerland|Czech Republic|Germany|Denmark|Spain|Finland|France|United Kingdom|Hungary|Ireland|Netherlands|Norway|Poland|Portugal|Sweden|Slovenia',
+               CountryName)) %>% 
+  select(CountryName,
+         CountryCode,
+         "2002",
+         "2003",
+         #"2004",
+         #"2005",
+         #"2006",
+         #"2007",
+         #"2008",
+         #"2009",
+         "2010",
+         "2011",
+         "2012",
+         #"2013",
+         #"2014",
+         #"2015",
+         #"2016",
+         #"2017",
+         "2018",
+         #"2019", # Only N/As
+         #"2020" # Only N/As
+         ) %>% 
+  mutate(cntry = recode(CountryCode,
+                        'BEL' = 'BE',
+                        'CHE' = 'CH',
+                        'CHZ' = 'CZ',
+                        'DEU' = 'DE',
+                        'DNK' = 'DK',
+                        'ESP' = 'ES',
+                        'FIN' = 'FI',
+                        'FRA' = 'FR',
+                        'GBR' = 'GB',
+                        'HUN' = 'HU',
+                        'IRL' = 'IE',
+                        'NLD' = 'NL',
+                        'NOR' = 'NO',
+                        'POL' = 'PL',
+                        'PRT' = 'PT',
+                        'SVN' = 'SI',
+                        'SWE' = 'SE')) %>% 
+  relocate(cntry, .after = CountryCode)
+
+
+
+
+#cntrys_list2 <- c("Belgium",
+#                 "Switzerland",
+#                 "Czech Republic",
+#                 "Germany",
+#                 "Denmark",
+#                 "Spain",
+#                 "Finland",
+#                 "France",
+#                 "United Kingdom",
+#                 "Hungary",
+#                 "Ireland",
+#                 "Netherlands",
+#                 "Norway",
+#                 "Poland",
+#                 "Portugal",
+#                 "Sweden",
+#                 "Slovenia")
+
+
+# plot gini data
+gini_data %>% 
+  ggplot() +
+  aes(x = TIME, fill = LOCATION) +
+  geom_bar()
+
+```
+
+
+```{r eyeball plots of data, eval=FALSE, include=TRUE}
 
 data02 %>%
   #subset(cntry == "SI" | cntry == "DK") %>% 
@@ -409,6 +518,24 @@ data02 <- data02 %>%
 
 ```{r merge data}
 
+cntrys_list <- c("BE",
+                 "CH",
+                 "CZ",
+                 "DE",
+                 "DK",
+                 "ES",
+                 "FI",
+                 "FR",
+                 "GB",
+                 "HU",
+                 "IE",
+                 "NL",
+                 "NO",
+                 "PL",
+                 "PT",
+                 "SE",
+                 "SI")
+
 # merged data with all variables (some are N/As in the different surveys)
 data_merged <- rbind.fill(data02, data10, data18) %>% 
   within(rm(inwdd,
@@ -422,7 +549,10 @@ data_merged <- rbind.fill(data02, data10, data18) %>%
   mutate(
     essround = as_factor(essround),
     edition = as_factor(edition),
-  )
+  ) %>% 
+  subset(cntry %in% cntrys_list)
+
+levels(data_merged$cntry)
 
 # simple dataset with only the essential variables and no N/As
 data_merged_simpl <- data_merged %>% 
@@ -439,11 +569,8 @@ data_merged_simpl <- data_merged %>%
     eisced
     )
 
-levels(data_merged_simpl$cntry)
 
 ```
-
-
 ```{r plot merged data}
 
 data_merged_simpl %>%
@@ -453,6 +580,7 @@ data_merged_simpl %>%
   geom_bar()
 
 ```
+
 
 
 ```{r remove N/As}
