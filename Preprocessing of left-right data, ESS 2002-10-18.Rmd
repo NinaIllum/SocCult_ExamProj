@@ -328,21 +328,51 @@ data18 <- raw_data18 %>%
 
 ```
 
-```{r load gini-data}
+```{r load gini-data: Data from OECD}
+
+# meta data
+#gini_meta_data <- as.tibble(read_csv("exam_data/API_SI.POV.GINI_DS2_en_csv_v2_2357065/Metadata_Indicator_API_SI.POV.GINI_DS2_en_csv_v2_2357065.csv"))
 
 # load data
-gini_data <- as.tibble(read_csv("exam_data/DP_LIVE_14052021101600112.csv")) %>% 
+gini_data1 <- as.tibble(read_csv("exam_data/DP_LIVE_14052021101600112.csv")) %>% 
   select(LOCATION,
          TIME,
          Value) %>% 
+  filter(grepl('BEL|CHE|CZE|DEU|DNK|ESP|FIN|FRA|GBR|HUN|IRL|NLD|NOR|POL|PRT|SWE|SVN',
+               LOCATION)) %>% 
+  mutate(cntry = recode(LOCATION,
+                        'BEL' = 'BE',
+                        'CHE' = 'CH',
+                        'CZE' = 'CZ',
+                        'DEU' = 'DE',
+                        'DNK' = 'DK',
+                        'ESP' = 'ES',
+                        'FIN' = 'FI',
+                        'FRA' = 'FR',
+                        'GBR' = 'GB',
+                        'HUN' = 'HU',
+                        'IRL' = 'IE',
+                        'NLD' = 'NL',
+                        'NOR' = 'NO',
+                        'POL' = 'PL',
+                        'PRT' = 'PT',
+                        'SVN' = 'SI',
+                        'SWE' = 'SE')) %>% 
+  relocate(cntry, .after = LOCATION) %>% 
   pivot_wider(names_from = TIME, values_from = Value) %>% 
-  select(LOCATION,
+  select(cntry,
          "2002",
          "2003",
          "2010",
          "2011",
-         "2018") #%>% 
-  #na.omit()
+         "2012",
+         "2018")
+
+```
+
+
+```{r load gini-data: Data from The World Bank}
+
 # load gini data from second source
 #gini_data2 <- read.csv("exam_data/API_SI.POV.GINI_DS2_en_csv_v2_2357065/API_SI.POV.GINI_DS2_en_csv_v2_2357065.csv", sep = ",")
 
@@ -361,31 +391,13 @@ colnames(gini_data2) = (read.csv(
   as.is = T)
   )
 
-gini_data2_simpl <- gini_data2 %>% 
+func <- function(x, na.rm = F) x/100
+
+# filter our relevant columns
+gini_data2 <- gini_data2 %>% 
+  mutate_if(is.numeric, func) %>% 
   filter(grepl('Belgium|Switzerland|Czech Republic|Germany|Denmark|Spain|Finland|France|United Kingdom|Hungary|Ireland|Netherlands|Norway|Poland|Portugal|Sweden|Slovenia',
                CountryName)) %>% 
-  select(CountryName,
-         CountryCode,
-         "2002",
-         "2003",
-         #"2004",
-         #"2005",
-         #"2006",
-         #"2007",
-         #"2008",
-         #"2009",
-         "2010",
-         "2011",
-         "2012",
-         #"2013",
-         #"2014",
-         #"2015",
-         #"2016",
-         #"2017",
-         "2018",
-         #"2019", # Only N/As
-         #"2020" # Only N/As
-         ) %>% 
   mutate(cntry = recode(CountryCode,
                         'BEL' = 'BE',
                         'CHE' = 'CH',
@@ -404,10 +416,33 @@ gini_data2_simpl <- gini_data2 %>%
                         'PRT' = 'PT',
                         'SVN' = 'SI',
                         'SWE' = 'SE')) %>% 
-  relocate(cntry, .after = CountryCode)
+  select(cntry,
+         "2002",
+         "2003",
+         "2010",
+         "2011",
+         "2012",
+         "2018",
+         #"2019", # Only N/As
+         #"2020" # Only N/As
+         )
 
-
-
+gini_data2 <- gini_data2 %>% 
+  mutate(WB_2002 = gini_data2$'2002',
+         WB_2003 = gini_data2$'2003',
+         WB_2010 = gini_data2$'2010',
+         WB_2011 = gini_data2$'2011',
+         WB_2012 = gini_data2$'2012',
+         WB_2018 = gini_data2$'2018'
+         ) %>% 
+  select(cntry,
+         WB_2002,
+         WB_2003,
+         WB_2010,
+         WB_2011,
+         WB_2012,
+         WB_2018
+         )
 
 #cntrys_list2 <- c("Belgium",
 #                 "Switzerland",
@@ -427,12 +462,43 @@ gini_data2_simpl <- gini_data2 %>%
 #                 "Sweden",
 #                 "Slovenia")
 
+```
 
+
+```{r merge gini data sets}
+
+# merge OECD data and World Bank data
+gini_data <- left_join(gini_data1, gini_data2, "cntry") %>% 
+  mutate(
+    y2002 = ifelse(is.na(gini_data$WB_2002),
+                   ifelse(is.na(gini_data$'2002'), 
+                          ifelse(is.na(gini_data$WB_2003), gini_data$'2003', gini_data$WB_2003),
+                          gini_data$'2002'),
+                   gini_data$WB_2002),
+    
+    y2010 = ifelse(is.na(gini_data$WB_2010),
+                   ifelse(is.na(gini_data$'2010'),
+                          ifelse(is.na(gini_data$WB_2011),
+                                 ifelse(is.na(gini_data$'2011'),
+                                        ifelse(is.na(gini_data$WB_2012), gini_data$'2012',
+                                               gini_data$WB_2012),
+                                        gini_data$'2011'),
+                                 gini_data$WB_2011),
+                          gini_data$'2010'),
+                   gini_data$WB_2010),
+
+    y2018 = ifelse(is.na(gini_data$WB_2018), gini_data$'2018', gini_data$WB_2018)
+    ) %>% 
+  select(cntry,
+         y2002,
+         y2010,
+         y2018)
+    
 # plot gini data
 gini_data %>% 
   ggplot() +
-  aes(x = TIME, fill = LOCATION) +
-  geom_bar()
+  aes(x = cntry, fill = cntry) +
+  geom_density()
 
 ```
 
