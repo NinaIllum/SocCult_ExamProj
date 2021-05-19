@@ -505,7 +505,7 @@ gini_data %>%
 ```{r eyeball plots of data, eval=FALSE, include=TRUE}
 
 data02 %>%
-  #subset(cntry == "SI" | cntry == "DK") %>% 
+  subset(cntry == "GB" | cntry == "DK") %>% 
   ggplot() +
   aes(x = lrscale, color = cntry, fill = cntry) +
   geom_bar() +
@@ -514,7 +514,7 @@ data02 %>%
 
 
 data10 %>%
-  #subset(cntry == "SI" | cntry == "DK") %>% 
+  subset(cntry == "SI" | cntry == "DK") %>% 
   ggplot() +
   aes(x = lrscale, color = cntry, fill = cntry) +
   geom_bar() +
@@ -708,22 +708,27 @@ coop02 <- data02 %>%
          ) %>% 
   filter(
     ipudrst < 8
-  ) %>% 
-  mutate(
-    understanding = ifelse(ipudrst <= 2, '0',
-                        ifelse(ipudrst <= 4, '1',
-                               ifelse(ipudrst <= 6, '2', NA)
-                               )
-                        )
-    )
+  ) %>%
+  group_by(cntry,
+           ipudrst) %>% 
+  tally(wt = pspwght)
+
 
 coop02 <- coop02 %>% 
-    group_by(cntry,
-           understanding) %>% 
-  tally(wt = pspwght) #%>% 
-#  mutate(
-#    understanding_per_cntry = ifelse(understanding)
-#  )
+  ungroup() %>% 
+  group_by(cntry,
+           n) %>% 
+  mutate(
+    mean_coop = mean(ipudrst * n)
+  )
+
+  #mutate(
+  #  understanding = ifelse(ipudrst <= 2, '0',
+  #                      ifelse(ipudrst <= 4, '1',
+  #                             ifelse(ipudrst <= 6, '2', NA)
+  #                             )
+  #                      )
+  #  )
 
 # add cooperation data to 2002 data
 data_02_freq <- left_join(data_02_freq, coop02, "cntry")
@@ -734,6 +739,142 @@ data_02_freq <- data_02_freq %>%
 
 ```
 
+```{r plot?}
+
+data_02_freq %>% 
+  ggplot() +
+  aes(x = cntry, y = gini) +
+  geom_point(aes(color = cntry))
+
+
+```
+
+```{r percentage lrscale for 2010 & 2018}
+
+## 2010
+
+data_10_freq <- data10 %>% 
+  select(cntry,
+         lrscale) %>% 
+  # only keep EU countries with data in all 3 surveys
+  subset(cntry %in% cntrys_list) %>% 
+  # remove N/As
+  filter(lrscale < 11)
+
+# counts no of observations with opinions 0-10
+## does not tae country into account
+data_10_freq <- data10 %>% 
+  # only keep EU countries with data in all 3 surveys
+  subset(cntry %in% cntrys_list) %>% 
+  mutate(
+    left_right = ifelse(lrscale <= 1, '1_left',
+                        ifelse(lrscale <= 4, '2_mid-left',
+                               ifelse(lrscale <= 5, '3_center',
+                                      ifelse(lrscale <= 8, '4_mid-right',
+                                             ifelse(lrscale <= 10, '5_right', NA)
+                                             )
+                                      )
+                               )
+                        )
+    ) %>% 
+  group_by(cntry,
+           left_right) %>% 
+  tally(wt = pspwght)
+
+# left join this stuff
+sum_by_cntry_10 <- data10 %>% 
+  group_by(cntry) %>% 
+  tally(wt = pspwght)
+
+data_10_freq <- left_join(data_10_freq, sum_by_cntry_10, "cntry") %>% 
+  mutate(
+    lr_freq = (n.x / n.y * 100)
+  )
+
+
+## 2018
+
+data_18_freq <- data18 %>% 
+  select(cntry,
+         lrscale) %>% 
+  # only keep EU countries with data in all 3 surveys
+  subset(cntry %in% cntrys_list) %>% 
+  # remove N/As
+  filter(lrscale < 11)
+
+# counts no of observations with opinions 0-10
+## does not tae country into account
+data_18_freq <- data18 %>% 
+  # only keep EU countries with data in all 3 surveys
+  subset(cntry %in% cntrys_list) %>% 
+  mutate(
+    left_right = ifelse(lrscale <= 1, '1_left',
+                        ifelse(lrscale <= 4, '2_mid-left',
+                               ifelse(lrscale <= 5, '3_center',
+                                      ifelse(lrscale <= 8, '4_mid-right',
+                                             ifelse(lrscale <= 10, '5_right', NA)
+                                             )
+                                      )
+                               )
+                        )
+    ) %>% 
+  group_by(cntry,
+           left_right) %>% 
+  tally(wt = pspwght)
+
+# left join this stuff
+sum_by_cntry_18 <- data18 %>% 
+  group_by(cntry) %>% 
+  tally(wt = pspwght)
+
+data_18_freq <- left_join(data_18_freq, sum_by_cntry_18, "cntry") %>% 
+  mutate(
+    lr_freq = (n.x / n.y * 100)
+  )
+
+```
+
+
+
+```{r frequencies across years}
+
+freq_data <- data_02_freq %>% 
+  select(cntry,
+         left_right) %>% 
+  mutate(lr_freq02 = data_02_freq$lr_freq,
+         lr_freq10 = data_10_freq$lr_freq,
+         lr_freq18 = data_18_freq$lr_freq)
+
+
+freq_data %>% 
+  filter(cntry == "FR") %>% 
+  group_by(cntry) %>% 
+  ggplot(aes(x = left_right)) +
+  geom_jitter(aes(y = lr_freq02, color = '02')) +
+  geom_jitter(aes(y = lr_freq10, color = '10')) +
+  geom_jitter(aes(y = lr_freq18, color = '18'))
+ #  geom_line(position = pd)
+
+```
+
+
+```{r plots, plots, plots}
+
+pacman::p_load(RColorBrewer)
+
+gini_plot_data <- gini_data %>% 
+  pivot_longer(cols = starts_with('y'), names_to = 'gini') %>% 
+  filter(gini == "y2002")
+
+gini_plot_data %>% ggplot() +
+  aes(x = cntry, y = value, fill = cntry) +
+  geom_col() +
+  theme_minimal() +
+  labs(x = "Country", y = "Gini-coefficient") +
+  scale_fill_simpsons()
+  #scale_fill_brewer(palette = 'Set3')
+
+```
 
 
 
