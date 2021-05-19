@@ -657,12 +657,6 @@ data_02_freq <- data02 %>%
   # remove N/As
   filter(lrscale < 11)
 
-
-data_02_freq <- data_02_freq %>% 
-  mutate(
-    opinion_left = count('2002' < 2)
-  )
-
 # counts no of observations with opinions 0-10
 ## does not tae country into account
 data_02_freq <- data02 %>% 
@@ -690,7 +684,7 @@ sum_by_cntry <- data02 %>%
 
 data_02_freq <- left_join(data_02_freq, sum_by_cntry, "cntry") %>% 
   mutate(
-    freq = (n.x / n.y * 100)
+    lr_freq = (n.x / n.y * 100)
   )
 
 ```
@@ -701,7 +695,7 @@ data_02_freq <- left_join(data_02_freq, sum_by_cntry, "cntry") %>%
 # selecting gini scores from 2002
 gini02 <- gini_data %>% 
   select(cntry,
-         y2002)
+         gini = y2002)
 
 # add gini data to 2002 data
 data_02_freq <- left_join(data_02_freq, gini02, "cntry")
@@ -709,15 +703,34 @@ data_02_freq <- left_join(data_02_freq, gini02, "cntry")
 # selecting cooperation scores from 2002
 coop02 <- data02 %>% 
   select(cntry,
-         ipudrst,
-         ppltrst,
-         pplfair,
-         pplhlp)
+         ipudrst, # Important to understand different people: 1 = very much like me, 8 = not like me at all
+         pspwght
+         ) %>% 
+  filter(
+    ipudrst < 8
+  ) %>% 
+  mutate(
+    understanding = ifelse(ipudrst <= 2, '0',
+                        ifelse(ipudrst <= 4, '1',
+                               ifelse(ipudrst <= 6, '2', NA)
+                               )
+                        )
+    )
 
+coop02 <- coop02 %>% 
+    group_by(cntry,
+           understanding) %>% 
+  tally(wt = pspwght) #%>% 
+#  mutate(
+#    understanding_per_cntry = ifelse(understanding)
+#  )
+
+# add cooperation data to 2002 data
+data_02_freq <- left_join(data_02_freq, coop02, "cntry")
 
 # filter out N/As
 data_02_freq <- data_02_freq %>% 
-  filter(!is.na(y2002))
+  filter(!is.na(gini))
 
 ```
 
