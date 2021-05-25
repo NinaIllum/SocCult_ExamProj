@@ -1,0 +1,200 @@
+---
+title: "SocCult Analysis of ABM"
+author: "Nina Illum and Verus Juhasz"
+date: "24/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load packages
+pacman::p_load(tidyverse, plyr)
+
+```
+
+
+## Load data
+
+```{r load data}
+# load raw data
+raw_data02 <- as.tibble(read_csv("exam_data/ESS1e06.6/ESS1e06.6_F1.csv"))
+raw_data10 <- as.tibble(read_csv("exam_data/ESS5e03.4/ESS5e03.4_F1.csv"))
+raw_data18 <- as.tibble(read_csv("exam_data/ESS9e03.1/ESS9e03.1_F1.csv"))
+
+# select relevant data (2002)
+data02 <- raw_data02 %>% 
+  select(
+    essround,
+    edition,
+    idno,
+    # Respondent's identification number
+    inwyr,
+    # Year of interview
+    cntry,
+    # Country
+    lrscale,
+    # Placement on left right scale
+    
+# Cooperation variable
+    ipudrst,
+    # Important to understand different people
+
+# Weights
+    dweight,
+    # Designer weights
+    pspwght,
+    # Post-Stratification weights
+    pweight
+    # Population weights
+  ) %>% 
+  mutate(
+    cntry = as_factor(cntry),
+    year = inwyr
+    )
+
+# select relevant data (2010)
+data10 <- raw_data10 %>% 
+  select(
+    essround,
+    edition,
+    idno,
+    # Respondent's identification number
+    inwyys,
+    # Year of interview
+    cntry,
+    # Country
+    lrscale,
+    # Placement on left right scale
+    
+# Cooperation variable
+    ipudrst,
+    # Important to understand different people
+    
+# Weights
+    dweight,
+    # Designer weights
+    pspwght,
+    # Post-Stratification weights
+    pweight
+    # Population weights
+  ) %>% 
+  mutate(
+    cntry = as_factor(cntry),
+    year = inwyys
+    )
+
+# select relevant data (2018)
+data18 <- raw_data18 %>%
+  select(
+    essround,
+    edition,
+    idno,
+    # Respondent's identification number
+    inwyys,
+    # Year of interview
+    cntry,
+    # Country
+    lrscale,
+    # Placement on left right scale
+    
+# Cooperation variable
+    ipudrst,
+    # Important to understand different people
+    
+# Weights
+    dweight,
+    # Designer weights
+    pspwght,
+    # Post-Stratification weights
+    pweight
+    # Population weights
+  ) %>% 
+  mutate(
+    cntry = as_factor(cntry),
+    year = inwyys
+    )
+
+```
+
+
+## Model Validation
+
+```{r data formatting}
+
+## 2010
+
+data10_opinions <- data10 %>% 
+  select(cntry,
+         lrscale) %>% 
+  # only keep EU countries with data in all 3 surveys
+  subset(cntry %in% cntrys_list) %>% 
+  # remove N/As
+  filter(lrscale < 11)
+
+# counts no of observations with opinions 0-10
+## does not take country into account
+data10_opinions <- data10 %>% 
+  # only keep EU countries with data in all 3 surveys
+  subset(cntry %in% cntrys_list) %>% 
+  group_by(cntry,
+           lrscale) %>% 
+  tally(wt = pspwght)
+
+# left join this stuff
+#sum_by_cntry_10 <- data10 %>% 
+#  group_by(cntry) %>% 
+#  tally(wt = pspwght)
+
+#data10_opinions <- left_join(data10_opinions, sum_by_cntry_10, "cntry") %>% 
+#  mutate(
+#    lr_freq = (n.x / n.y * 100)
+#  )
+
+
+## 2018
+
+data18_opinions <- data18 %>% 
+  select(cntry,
+         lrscale) %>% 
+  # only keep EU countries with data in all 3 surveys
+  subset(cntry %in% cntrys_list) %>% 
+  # remove N/As
+  filter(lrscale < 11)
+
+# counts no of observations with opinions 0-10
+## does not take country into account
+data18_opinions <- data18 %>% 
+  # only keep EU countries with data in all 3 surveys
+  subset(cntry %in% cntrys_list) %>% 
+  group_by(cntry,
+           lrscale) %>% 
+  tally(wt = pspwght)
+
+# left join this stuff
+#sum_by_cntry_18 <- data18 %>% 
+#  group_by(cntry) %>% 
+#  tally(wt = pspwght)
+
+#data18_opinions <- left_join(data18_opinions, sum_by_cntry_18, "cntry") %>% 
+#  mutate(
+#    lr_freq = (n.x / n.y * 100)
+#  )
+
+
+
+```
+
+
+### T-test
+
+```{r t-test}
+
+```
+
+
+
+
+
+
+
