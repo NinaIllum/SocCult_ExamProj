@@ -14,6 +14,8 @@ pacman::p_load(tidyverse, plyr)
 ```
 
 
+## Load ESS data
+
 ```{r load data 2002}
 
 # load data
@@ -325,10 +327,11 @@ data18 <- raw_data18 %>%
 
 ```
 
-```{r load gini-data: Data from OECD}
+## Gini-coefficients
 
-# meta data
-#gini_meta_data <- as.tibble(read_csv("exam_data/API_SI.POV.GINI_DS2_en_csv_v2_2357065/Metadata_Indicator_API_SI.POV.GINI_DS2_en_csv_v2_2357065.csv"))
+### Load data
+
+```{r load gini-data: Data from OECD}
 
 # load data
 gini_data1 <- as.tibble(read_csv("exam_data/DP_LIVE_14052021101600112.csv")) %>% 
@@ -368,11 +371,10 @@ gini_data1 <- as.tibble(read_csv("exam_data/DP_LIVE_14052021101600112.csv")) %>%
 ```
 
 
+
 ```{r load gini-data: Data from The World Bank}
 
-# load gini data from second source
-#gini_data2 <- read.csv("exam_data/API_SI.POV.GINI_DS2_en_csv_v2_2357065/API_SI.POV.GINI_DS2_en_csv_v2_2357065.csv", sep = ",")
-
+## load gini data from second source
 # problematic csv-file so doing some manual loading of relevant rows without headers
 gini_data2 = read.csv(
   "exam_data/API_SI.POV.GINI_DS2_en_csv_v2_2357065/API_SI.POV.GINI_DS2_en_csv_v2_2357065_edited3.csv",
@@ -461,6 +463,7 @@ gini_data2 <- gini_data2 %>%
 
 ```
 
+### Merge data
 
 ```{r merge gini data sets}
 
@@ -502,10 +505,10 @@ gini_data %>%
 ```
 
 
-```{r eyeball plots of data, eval=FALSE, include=TRUE}
+```{r eyeball plots of data, eval=FALSE, include=FALSE}
 
 data02 %>%
-  subset(cntry == "GB" | cntry == "DK") %>% 
+  #subset(cntry == "GB" | cntry == "DK") %>% 
   ggplot() +
   aes(x = lrscale, color = cntry, fill = cntry) +
   geom_bar() +
@@ -514,7 +517,7 @@ data02 %>%
 
 
 data10 %>%
-  subset(cntry == "SI" | cntry == "DK") %>% 
+  #subset(cntry == "GB" | cntry == "DK") %>% 
   ggplot() +
   aes(x = lrscale, color = cntry, fill = cntry) +
   geom_bar() +
@@ -522,7 +525,7 @@ data10 %>%
   facet_wrap(vars(cntry))
 
 data18 %>%
-  #subset(cntry == "SI" | cntry == "DK") %>% 
+  #subset(cntry == "GB" | cntry == "DK") %>% 
   ggplot() +
   aes(x = lrscale, color = cntry, fill = cntry) +
   geom_bar() +
@@ -531,6 +534,8 @@ data18 %>%
 
 ```
 
+
+## Select countries
 
 ```{r identify countries}
 
@@ -636,6 +641,8 @@ data_merged_simpl <- data_merged %>%
 
 ```
 
+### Check with a plot
+
 ```{r plot merged data}
 
 data_merged_simpl %>%
@@ -646,6 +653,9 @@ data_merged_simpl %>%
 
 ```
 
+## Frequencies of opinions
+
+### Opinions in 2002
 
 ```{r add lrscale percentages}
 
@@ -690,64 +700,7 @@ data_02_freq <- left_join(data_02_freq, sum_by_cntry, "cntry") %>%
 ```
 
 
-```{r add gini & cooperation measures}
-
-# selecting gini scores from 2002
-gini02 <- gini_data %>% 
-  select(cntry,
-         gini = y2002)
-
-# add gini data to 2002 data
-data_02_freq <- left_join(data_02_freq, gini02, "cntry")
-
-# selecting cooperation scores from 2002
-coop02 <- data02 %>% 
-  select(cntry,
-         ipudrst, # Important to understand different people: 1 = very much like me, 8 = not like me at all
-         pspwght
-         ) %>% 
-  filter(
-    ipudrst < 8
-  ) %>%
-  group_by(cntry,
-           ipudrst) %>% 
-  tally(wt = pspwght)
-
-
-coop02 <- coop02 %>% 
-  ungroup() %>% 
-  group_by(cntry,
-           n) %>% 
-  mutate(
-    mean_coop = mean(ipudrst * n)
-  )
-
-  #mutate(
-  #  understanding = ifelse(ipudrst <= 2, '0',
-  #                      ifelse(ipudrst <= 4, '1',
-  #                             ifelse(ipudrst <= 6, '2', NA)
-  #                             )
-  #                      )
-  #  )
-
-# add cooperation data to 2002 data
-data_02_freq <- left_join(data_02_freq, coop02, "cntry")
-
-# filter out N/As
-data_02_freq <- data_02_freq %>% 
-  filter(!is.na(gini))
-
-```
-
-```{r plot?}
-
-data_02_freq %>% 
-  ggplot() +
-  aes(x = cntry, y = gini) +
-  geom_point(aes(color = cntry))
-
-
-```
+### Opinions in 2010 and 2018
 
 ```{r percentage lrscale for 2010 & 2018}
 
@@ -835,12 +788,15 @@ data_18_freq <- left_join(data_18_freq, sum_by_cntry_18, "cntry") %>%
 ```
 
 
+### Opinions across years
 
 ```{r frequencies across years}
 
 freq_data <- data_02_freq %>% 
   select(cntry,
-         left_right) %>% 
+         left_right)
+
+freq_data <- freq_data %>% 
   mutate(lr_freq02 = data_02_freq$lr_freq,
          lr_freq10 = data_10_freq$lr_freq,
          lr_freq18 = data_18_freq$lr_freq)
@@ -852,11 +808,80 @@ freq_data %>%
   ggplot(aes(x = left_right)) +
   geom_jitter(aes(y = lr_freq02, color = '02')) +
   geom_jitter(aes(y = lr_freq10, color = '10')) +
-  geom_jitter(aes(y = lr_freq18, color = '18'))
- #  geom_line(position = pd)
+  geom_jitter(aes(y = lr_freq18, color = '18')) #+
+  #geom_line(aes(y = lr_freq18))
+
+
+#position = pd
 
 ```
 
+## Combine data for 2002
+
+```{r add gini & cooperation measures}
+
+# selecting gini scores from 2002
+gini02 <- gini_data %>% 
+  select(cntry,
+         gini = y2002)
+
+# add gini data to 2002 data
+data_02_freq <- left_join(data_02_freq, gini02, "cntry")
+
+# selecting cooperation scores from 2002
+coop02 <- data02 %>% 
+  select(cntry,
+         ipudrst, # Important to understand different people: 1 = very much like me, 8 = not like me at all
+         pspwght
+         ) %>% 
+  filter(
+    ipudrst < 8
+  ) %>%
+  group_by(cntry,
+           ipudrst) %>% 
+  tally(wt = pspwght)
+
+
+coop02 <- coop02 %>% 
+  ungroup() %>% 
+  group_by(cntry,
+           n) %>% 
+  mutate(
+    mean_coop = mean(ipudrst * n)
+  )
+
+  #mutate(
+  #  understanding = ifelse(ipudrst <= 2, '0',
+  #                      ifelse(ipudrst <= 4, '1',
+  #                             ifelse(ipudrst <= 6, '2', NA)
+  #                             )
+  #                      )
+  #  )
+
+# add cooperation data to 2002 data
+data_02_full <- left_join(data_02_freq, coop02, "cntry")
+
+# filter out N/As
+data_02_full <- data_02_full %>% 
+  filter(!is.na(gini))
+
+```
+
+
+### Check with plot
+
+```{r plot}
+
+data_02_full %>% 
+  ggplot() +
+  aes(x = cntry, y = gini) +
+  geom_point(aes(color = cntry))
+
+
+```
+
+
+## Check with plots
 
 ```{r plots, plots, plots}
 
