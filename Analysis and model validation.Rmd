@@ -16,7 +16,7 @@ pacman::p_load(tidyverse, plyr)
 
 ## Load data
 
-```{r load data}
+```{r load ESS data}
 # load raw data
 raw_data02 <- as.tibble(read_csv("exam_data/ESS1e06.6/ESS1e06.6_F1.csv"))
 raw_data10 <- as.tibble(read_csv("exam_data/ESS5e03.4/ESS5e03.4_F1.csv"))
@@ -118,9 +118,67 @@ data18 <- raw_data18 %>%
 ```
 
 
+```{r preprocessing function}
+
+preprocess.function <- function(dat) {
+  dat %>% 
+  filter(
+      ticks < 2921) %>% 
+  mutate(
+    trial = str_extract(file_id, "\\d{1,2}")
+  )
+}
+
+```
+
+
+```{r load model output}
+
+files_DK <- list.files("netlogo_output/ABM_code final running/", pattern = "^output-data_DK.*?\\.csv", full.names = TRUE, recursive = T)
+
+df_DK <- purrr::map_df(files_DK, function(x) {
+	data <- read.csv(x, header=TRUE)
+	cbind(file_id = x, data)
+	})
+
+df_DK <- df_DK %>% 
+  preprocess.function() %>% 
+  mutate(
+    trial = as.factor(trial),
+    ticks = as.factor(ticks),
+    cntry = "DK"
+  )
+
+```
+
+
+```{r}
+
+df_DK %>% 
+  group_by(trial) %>% 
+  #filter(trial == 10
+  #       ) %>% 
+  ggplot() +
+  aes(x = opinion,
+      color = ticks,
+      fill = ticks,
+      alpha = 0.2) +
+  geom_density()
+
+count(df_DK$opinion == 1)
+
+
+```
+
+
+
 ## Model Validation
 
 ```{r data formatting}
+
+country_list <- c("DK",
+                 "FR",
+                 "GB")
 
 ## 2010
 
@@ -128,7 +186,7 @@ data10_opinions <- data10 %>%
   select(cntry,
          lrscale) %>% 
   # only keep EU countries with data in all 3 surveys
-  subset(cntry %in% cntrys_list) %>% 
+  subset(cntry %in% country_list) %>% 
   # remove N/As
   filter(lrscale < 11)
 
@@ -136,7 +194,7 @@ data10_opinions <- data10 %>%
 ## does not take country into account
 data10_opinions <- data10 %>% 
   # only keep EU countries with data in all 3 surveys
-  subset(cntry %in% cntrys_list) %>% 
+  subset(cntry %in% country_list) %>% 
   group_by(cntry,
            lrscale) %>% 
   tally(wt = pspwght)
@@ -158,7 +216,7 @@ data18_opinions <- data18 %>%
   select(cntry,
          lrscale) %>% 
   # only keep EU countries with data in all 3 surveys
-  subset(cntry %in% cntrys_list) %>% 
+  subset(cntry %in% country_list) %>% 
   # remove N/As
   filter(lrscale < 11)
 
@@ -166,7 +224,7 @@ data18_opinions <- data18 %>%
 ## does not take country into account
 data18_opinions <- data18 %>% 
   # only keep EU countries with data in all 3 surveys
-  subset(cntry %in% cntrys_list) %>% 
+  subset(cntry %in% country_list) %>% 
   group_by(cntry,
            lrscale) %>% 
   tally(wt = pspwght)
