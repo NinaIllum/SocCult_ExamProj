@@ -119,6 +119,7 @@ data02 <- raw_data02 %>%
     edulvl = edulvla
     )
 
+levels(data02$cntry)
 
 ```
 
@@ -495,17 +496,11 @@ gini_data <- gini_data %>%
          y2002,
          y2010,
          y2018)
-    
-# plot gini data
-gini_data %>% 
-  ggplot() +
-  aes(x = cntry, fill = cntry) +
-  geom_density()
 
 ```
 
 
-```{r eyeball plots of data, eval=FALSE, include=FALSE}
+```{r eyeball plots of data, echo=TRUE}
 
 data02 %>%
   #subset(cntry == "GB" | cntry == "DK") %>% 
@@ -801,18 +796,17 @@ freq_data <- freq_data %>%
          lr_freq10 = data_10_freq$lr_freq,
          lr_freq18 = data_18_freq$lr_freq)
 
+DKFRGB <- c('DK', 'FR', 'GB')
 
 freq_data %>% 
-  filter(cntry == "FR") %>% 
+  filter(cntry %in% DKFRGB) %>% 
   group_by(cntry) %>% 
-  ggplot(aes(x = left_right)) +
-  geom_jitter(aes(y = lr_freq02, color = '02')) +
-  geom_jitter(aes(y = lr_freq10, color = '10')) +
-  geom_jitter(aes(y = lr_freq18, color = '18')) #+
-  #geom_line(aes(y = lr_freq18))
+  ggplot(aes(x = left_right, color = cntry)) +
+  geom_point(aes(y = lr_freq02, shape = '02')) +
+  geom_point(aes(y = lr_freq10, shape = '10')) +
+  geom_point(aes(y = lr_freq18, shape = '18')) +
+  theme_minimal()
 
-
-#position = pd
 
 ```
 
@@ -842,10 +836,16 @@ coop02 <- data02 %>%
   tally(wt = pspwght)
 
 
+DK <- coop02 %>% 
+  filter(cntry == "DK") %>% 
+  mutate(
+  mean_coop = (ipudrst * n)
+  )
+
+
 coop02 <- coop02 %>% 
-  ungroup() %>% 
-  group_by(cntry,
-           n) %>% 
+  #ungroup() %>% 
+  group_by(cntry) %>% 
   mutate(
     mean_coop = mean(ipudrst * n)
   )
@@ -860,10 +860,6 @@ coop02 <- coop02 %>%
 
 # add cooperation data to 2002 data
 data_02_full <- left_join(data_02_freq, coop02, "cntry")
-
-# filter out N/As
-data_02_full <- data_02_full %>% 
-  filter(!is.na(gini))
 
 ```
 

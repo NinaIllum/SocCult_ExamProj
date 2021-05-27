@@ -303,6 +303,14 @@ pol_index_18_DK <- func(data_18_valid_DK)
 pol_index_18_FR <- func(data_18_valid_FR)
 pol_index_18_GB <- func(data_18_valid_GB)
 
+year <- c(2010, 2010, 2010, 2018, 2018, 2018)
+country <- c("DK", "FR", "GB", "DK", "FR", "GB")
+pol_index <- c(pol_index_10_DK, pol_index_10_FR, pol_index_10_GB, pol_index_18_DK, pol_index_18_FR, pol_index_18_GB)
+
+pol_df <- data.frame(year, country, pol_index)
+
+write.csv(pol_df,".\\Calculated_polarization_index.csv", row.names = FALSE)
+
 ```
 
 
