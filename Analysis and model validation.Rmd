@@ -179,67 +179,137 @@ count(df_DK$opinion == 1)
 country_list <- c("DK",
                  "FR",
                  "GB")
-
 ## 2010
+# Denmark
+data_10_valid_DK <- data10 %>% 
+  select(
+    idno,
+    inwyys,
+    cntry,
+    lrscale
+  ) %>% 
+  filter(
+    cntry == "DK",
+    lrscale < 11
+  ) %>% 
+  mutate(
+    opinion =  (lrscale * (2/11)) - 1
+  )
 
-data10_opinions <- data10 %>% 
-  select(cntry,
-         lrscale) %>% 
-  # only keep EU countries with data in all 3 surveys
-  subset(cntry %in% country_list) %>% 
-  # remove N/As
-  filter(lrscale < 11)
+# France
+data_10_valid_FR <- data10 %>% 
+  select(
+    idno,
+    inwyys,
+    cntry,
+    lrscale
+  ) %>% 
+  filter(
+    cntry == "FR",
+    lrscale < 11
+  ) %>% 
+  mutate(
+    opinion =  (lrscale * (2/11)) - 1
+  )
 
-# counts no of observations with opinions 0-10
-## does not take country into account
-data10_opinions <- data10 %>% 
-  # only keep EU countries with data in all 3 surveys
-  subset(cntry %in% country_list) %>% 
-  group_by(cntry,
-           lrscale) %>% 
-  tally(wt = pspwght)
-
-# left join this stuff
-#sum_by_cntry_10 <- data10 %>% 
-#  group_by(cntry) %>% 
-#  tally(wt = pspwght)
-
-#data10_opinions <- left_join(data10_opinions, sum_by_cntry_10, "cntry") %>% 
-#  mutate(
-#    lr_freq = (n.x / n.y * 100)
-#  )
+# Great Britain
+data_10_valid_GB <- data10 %>% 
+  select(
+    idno,
+    inwyys,
+    cntry,
+    lrscale
+  ) %>% 
+  filter(
+    cntry == "GB",
+    lrscale < 11
+  ) %>% 
+  mutate(
+    opinion =  (lrscale * (2/11)) - 1
+  )
 
 
 ## 2018
+# Denmark
+data_18_valid_DK <- data18 %>% 
+  select(
+    idno,
+    inwyys,
+    cntry,
+    lrscale
+  ) %>% 
+  filter(
+    cntry == "DK",
+    lrscale < 11
+  ) %>% 
+  mutate(
+    opinion =  (lrscale * (2/11)) - 1
+  )
 
-data18_opinions <- data18 %>% 
-  select(cntry,
-         lrscale) %>% 
-  # only keep EU countries with data in all 3 surveys
-  subset(cntry %in% country_list) %>% 
-  # remove N/As
-  filter(lrscale < 11)
+# France
+data_18_valid_FR <- data18 %>% 
+  select(
+    idno,
+    inwyys,
+    cntry,
+    lrscale
+  ) %>% 
+  filter(
+    cntry == "FR",
+    lrscale < 11
+  ) %>% 
+  mutate(
+    opinion =  (lrscale * (2/11)) - 1
+  )
 
-# counts no of observations with opinions 0-10
-## does not take country into account
-data18_opinions <- data18 %>% 
-  # only keep EU countries with data in all 3 surveys
-  subset(cntry %in% country_list) %>% 
-  group_by(cntry,
-           lrscale) %>% 
-  tally(wt = pspwght)
+# Great Britain
+data_18_valid_GB <- data18 %>% 
+  select(
+    idno,
+    inwyys,
+    cntry,
+    lrscale
+  ) %>% 
+  filter(
+    cntry == "GB",
+    lrscale < 11
+  ) %>% 
+  mutate(
+    opinion =  (lrscale * (2/11)) - 1
+  )
 
-# left join this stuff
-#sum_by_cntry_18 <- data18 %>% 
-#  group_by(cntry) %>% 
-#  tally(wt = pspwght)
-
-#data18_opinions <- left_join(data18_opinions, sum_by_cntry_18, "cntry") %>% 
-#  mutate(
-#    lr_freq = (n.x / n.y * 100)
-#  )
+```
 
 
+### Model Validation with the polarization index
+The 
+
+```{r new data formatting}
+
+# function for calculating variance of distances in opinions of random sample (N = 64)
+func <- function(d) {
+  sam = sample(nrow(d), 64)
+  l <- vector(length = 0)
+  for (v in sam) { 
+    l <- c(l, abs(d$opinion[v]-d$opinion))
+  }
+return(var(l))}
+
+# calculate polarization index
+pol_index_10_DK <- func(data_10_valid_DK)
+pol_index_10_FR <- func(data_10_valid_FR)
+pol_index_10_GB <- func(data_10_valid_GB)
+pol_index_18_DK <- func(data_18_valid_DK)
+pol_index_18_FR <- func(data_18_valid_FR)
+pol_index_18_GB <- func(data_18_valid_GB)
+
+year <- c(2010, 2010, 2010, 2018, 2018, 2018)
+country <- c("DK", "FR", "GB", "DK", "FR", "GB")
+pol_index <- c(pol_index_10_DK, pol_index_10_FR, pol_index_10_GB, pol_index_18_DK, pol_index_18_FR, pol_index_18_GB)
+
+pol_df <- data.frame(year, country, pol_index)
+
+write.csv(pol_df,".\\Calculated_polarization_index.csv", row.names = FALSE)
 
 ```
 
