@@ -33,7 +33,6 @@ globals [                 ;; what are some overarching variables of the populati
   sd_opinion_group_1
   sd_opinion_group_0
   sd_opinion_group_-1
-
   mean_opinion_left
   var_opinion_left
   sd_opinion_left
@@ -49,7 +48,6 @@ globals [                 ;; what are some overarching variables of the populati
   mean_opinion_right
   var_opinion_right
   sd_opinion_right
-
   extremists
   count_extremists
   count_extremists_1
@@ -70,7 +68,6 @@ globals [                 ;; what are some overarching variables of the populati
   %_extremists
   %_extremists_1
   %_extremists_-1
- ; unhappy_turtles
   patch1
   patch2
   cluster_list
@@ -86,7 +83,6 @@ globals [                 ;; what are some overarching variables of the populati
   mid_count_rounded
   mid_right_count_rounded
   right_count_rounded
-
   output-filename
 ]
 
@@ -98,8 +94,8 @@ patches-own
   other_poss_spot_nearby_count
   possible_spot?
   better_spot?
- low_satisfactory_spot?
- satisfactory_spot?
+  low_satisfactory_spot?
+  satisfactory_spot?
 ]
 
 turtles-own
@@ -126,16 +122,7 @@ turtles-own
   other_nearby_count
   target
   colorlist
-
-mygroup
-
-  ;;move to patch properties:
-;  better_spots
-;  low_satisfactory_spots
-;  satisfactory_spots
-;  satisfactory_spots_count
-;  better_spots_count
-;  low_satisfactory_spots_count
+  mygroup
 ]
 
 
@@ -145,48 +132,29 @@ mygroup
 
 
 
-
-
-
 to setup
   clear-all
   reset-ticks
    let my-seed new-seed            ;; generate a new seed
    output-print word "Generated seed: " my-seed  ;; print it out
    random-seed my-seed             ;; use the new seed
-;  random-seed -1427846569                   ;; for reproducing: insetad of x --> add number that was set as seed, comment out 3 lines above
-;  set-seed
-;  let my-seed new-seed            ;; generate a new seed
-;  output-print word "Generated seed: " my-seed  ;; print it out
-;  random-seed my-seed             ;; use the new seed
-; set ID random 9999999
+;  random-seed "X"                ;; for reproducing: insetad of X --> add number that was set as seed, comment out 3 lines above
   setup-targets
   setup-turtles
   setup-turtle-opinion-color
   setup-iterations
   setup-clusters
   set output-filename "output-data.csv"
-
   initialize-data-file
 end
 
 
-;to set-seed
-;  let user-seed (word set-seed-from-user)
-;  ifelse empty? user-seed [
-;    let my-seed new-seed            ;; generate a new seed
-;    output-print word "Generated seed: " my-seed  ;; print it out
-;    random-seed my-seed             ;; use the new seed
-;  ][ let my-seed set-seed-from-user
-;     output-print word "User entered seed: " my-seed  ;; print it out
-;    random-seed my-seed]
-;end
 
 to go
   ask turtles [
         set neighborhood_turtles turtles in-radius Radius
         set neighborhood_turtles_count count neighborhood_turtles ]
-  interact-turtles           ;; the turtles interact with each other and influecne each other's attribute scores
+  interact-turtles                ;; the turtles interact with each other and influecne each other's attribute scores
   move-unhappy-turtles
   tick
   if (ticks mod 10 ) = 0 [compute-measures]
@@ -278,7 +246,7 @@ end
 
 
 to setup-iterations
-  set iterations_max Gini-coefficient * 20               ;; is 20 the right number? revise
+  set iterations_max Gini-coefficient * 20
   set iterations_max_rounded round iterations_max
 end
 
@@ -297,24 +265,16 @@ to initialize-data-file
   if output-data?
   [
     file-close-all
-
     if behaviorspace-run-number <= 1 [
-      ;; we only want to delete the existing file if we're running in console
-      ;; when running in console,  behaviorspace-run-number = 0,
-      ;; first run in behavior space is behaviorspace-run-number = 1
       if file-exists? output-filename [
         file-delete output-filename
       ]
-      ;; write a header to the file
       file-open output-filename
       file-print (word "run-number, ticks, turtle-id, opinion" )
-
     ]
   ]
 end
 
-to compute-starting-measures
-end
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -345,31 +305,11 @@ to update-weight
       set weight (1 - ((abs (j_opinion - opinion) * H + abs (j_group - group )) / ( 1 + H ) ))
 end
 
-to update-raw-opinion-change
-;  update-a
-  set delta_opinion ((( 0.5 * (j_opinion - opinion) * weight ))) ;* 0.85 ) + (( a * ((weight + 1) / 2 )))* 0.15 ) ; / (M + ( 1 - M ))
 
+to update-raw-opinion-change
+  set delta_opinion ((( 0.5 * (j_opinion - opinion) * weight ))) ;* 0.85 ) + (( a * ((weight + 1) / 2 )))* 0.15 ) ; / (M + ( 1 - M ))
 end
 
-
-;to update-a
-;  ifelse (( j_opinion + 1 ) / 2 ) > random-float 1 [  ; If j picks a pro argument...
-;    ifelse (( opinion + 1 ) / 2 ) > random-float 1 [  ; ...and i drops a pro argument, then a=0 (ineffective argument exchange)
-;      set a 0
-;    ]
-;    [                                                 ; ...and i drops a con argument, then i's opinion gets a positive push
-;      set a ( 2 / S )
-;    ]
- ; ]
-  ;[                                                   ; If j picks a con argument
-   ; ifelse (( opinion + 1 ) / 2 ) > random-float 1 [  ; ...and i drops a pro argument, then i's opinion gets a negative push
-    ;  set a ( -2 / S)
-;    ]
- ;   [                                                 ; ...and i drops a con argument, then a=0 (ineffective argument exchange)
-  ;    set a 0
-;    ]
- ; ]
-;end
 
 
 to update-opinion-and-group
@@ -400,9 +340,7 @@ to move-unhappy-turtles
   ask patches [identify-possible-spots]
   ask patches with [possible_spot? = true] [setup-for-calculate-better-spots]
   ask patches with [possible_spot? = true] [ calculate-better-spots ]
-;  ask turtles [move-turtles]
   ask turtles with [group = -1 ] [ move-turtles]
-;  ask turtles with [group = 0 ] [ move-turtles]
   ask turtles with [group = 1 ] [ move-turtles]
 end
 
@@ -425,43 +363,19 @@ end
 to setup-for-calculate-better-spots
     set turtles_poss_spot_nearby turtles in-radius Radius ; of possible_spots     ;; Then I identify the turtles in the neighborhood of the possible_spots ("turtles_poss_spot_nearby")
     set turtles_poss_spot_nearby_count count turtles_poss_spot_nearby ;]            ;; and finally I try to count the turtles that are in the neighborhood  of each possible_spot ("turtles_poss_spot_nearby_count")
-
-;;    EXPLANATION OF THE ARISING ERROR:
-;;    This counting ("count" function) can not run however, because it creates a list
-;;    of the counted agentsets, each agentset being a number of turtles around a possible_spot. (as can be seen on the error message, after pressing go)
-;;    What we want instead, is to kind of have these counted agentsets (the number of turtles) assigned/saved to the possible_spot.
-;;    They should be allowed to have different values, on which we can later do calculations (seen below).
-
-  ; for-each function? or sthing similar
-
     set other_poss_spot_nearby turtles with [color != mycolor] in-radius Radius
     set other_poss_spot_nearby_count count other_poss_spot_nearby
 end
 
 to calculate-better-spots
-
    ifelse other_poss_spot_nearby_count < ( turtles_poss_spot_nearby_count * (Tolerance_threshold - 0.2 ) )
-   [set better_spot? true] [set better_spot? false]
-
+      [set better_spot? true] [set better_spot? false]
    ifelse other_poss_spot_nearby_count < ( turtles_poss_spot_nearby_count * ( Tolerance_threshold - 0.1 ) )
-   [set satisfactory_spot? true] [set satisfactory_spot? false]
-
+      [set satisfactory_spot? true] [set satisfactory_spot? false]
    ifelse other_poss_spot_nearby_count < (turtles_poss_spot_nearby_count * Tolerance_threshold)
-   [set low_satisfactory_spot? true] [set low_satisfactory_spot? false]
+      [set low_satisfactory_spot? true] [set low_satisfactory_spot? false]
 end
 
-
-;to calculate-better-spots
-;  if turtles_poss_spot_nearby_count > 0
-;    [
-;    set better_spots possible_spots with [ other_poss_spot_nearby_count < ( turtles_poss_spot_nearby_count * (Tolerance_threshold - 0.4 ) ) ] ;; I calculate which of potential spots have more turtles like me in their neighborhood
-;    set better_spots_count count better_spots
-;    set satisfactory_spots possible_spots with [ other_poss_spot_nearby_count < ( turtles_poss_spot_nearby_count * ( Tolerance_threshold - 0.2 ) ) ]  ;; same as above, just lower treshold of similar turtles
-;    set satisfactory_spots_count count satisfactory_spots
-;    set low_satisfactory_spots possible_spots with [ other_poss_spot_nearby_count < (turtles_poss_spot_nearby_count * Tolerance_threshold) ]
-;    set low_satisfactory_spots_count count low_satisfactory_spots
-;  ]
-;end
 
 
 to move-turtles
@@ -472,7 +386,7 @@ to move-turtles
       [ move-to one-of patches with [satisfactory_spot? = true] in-radius Moving_max_distance_radius]
                 [  ifelse any? patches with [satisfactory_spot? = true]
       [ move-to one-of patches with [low_satisfactory_spot? = true] in-radius Moving_max_distance_radius ]
-          [ ;; else command                                           ;; decision: do they move if there are no spots above their tolerance treshold? revise and decide
+          [ ;; else command
          move-to one-of patches with [possible_spot? = true] in-radius Moving_max_distance_radius]
 ]]]
 end
@@ -485,6 +399,8 @@ to write-output-data [ #turtle-id #opinion ]
   file-flush
 end
 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;         Computation of indexes         ;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -495,7 +411,6 @@ to compute-measures
   setup-samples                             ;; takes a sample of all turtles. This sample is needed to calculate polarization index.
   calculate-polarization-index              ;; calculates polarization index
   count-extremist-%                         ;; calculates the % of agents that have an opinion -1 - -0.9, or 0.9 - 1 (opinion that are at the very edges of the opinion scale)
-  calculate-local-alignment
 end
 
 
@@ -606,34 +521,6 @@ to count-extremist-%
   set %_extremists_1 (count_extremists_1 / N) * 100
   set %_extremists_-1 (count_extremists_-1 / N) * 100
 end
-
-
-to calculate-local-alignment
-  let local_difference_neighborhood []
-  let local_difference_ingroup []
-  let local_difference_outgroup []
-  set sample_set turtles with [ sample_for_polarization_index = 1 ]
-  ask sample_set [
-    let mean_opinion_neighborhood mean [ opinion ] of neighborhood_turtles
-    set local_difference_neighborhood lput ( abs ( opinion - mean_opinion_neighborhood )) local_difference_neighborhood      ;; this produces a list of each (sample_set) turtle's difference from the mean opinion of their neighborhood
-;    let mygroup group
-    let my_set neighborhood_turtles with [ group = mygroup ]
-    if count my_set > 0 [
-      let mean_opinion_ingroup mean [ opinion ] of my_set
-      set local_difference_ingroup lput ( abs ( opinion - mean_opinion_ingroup )) local_difference_ingroup                   ;; this produces a list of each INGROUP (sample_set) turtle's difference from the mean opinion of their neighborhood
-    ]
-    set my_set neighborhood_turtles with [ group != mygroup ]                                                                ;; this produces a list of each OUTGROUP (sample_set) turtle's difference from the mean opinion of their neighborhood
-    if count my_set > 0 [
-      let mean_opinion_outgroup mean [ opinion ] of my_set
-      set local_difference_outgroup lput ( abs ( opinion - mean_opinion_outgroup )) local_difference_outgroup
-    ]
-  ]
-  ifelse empty? local_difference_neighborhood [set local_difference_neighborhood_mean 9][set local_difference_neighborhood_mean precision ( mean local_difference_neighborhood ) precisionN]  ;; takes the mean of the above created difference lists
-  ifelse empty? local_difference_ingroup [set local_difference_ingroup_mean 9][set local_difference_ingroup_mean precision ( mean local_difference_ingroup ) precisionN]
-  ifelse empty? local_difference_outgroup [set local_difference_ingroup_mean 9][set local_difference_outgroup_mean precision ( mean local_difference_outgroup ) precisionN]
-end
-
-;;;; WHY DO WE SET THE MEAN TO BE 9 ABOVE, IN CASE OF EMPTY LIST?????? ;;;;;;
 @#$#@#$#@
 GRAPHICS-WINDOW
 511

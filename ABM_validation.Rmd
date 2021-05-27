@@ -1,0 +1,258 @@
+---
+title: "ABM validation"
+author: "Nina Illum"
+date: "10/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+getwd()
+
+# load packages
+pacman::p_load(tidyverse, dplyr, WRS2, PairedData)
+
+```
+
+```{r}
+data.preprocessing <- function(dat) {
+  dat %>% 
+  dplyr::select(
+     ticks = x,
+     mean_opinion_global = y,
+     var_opinion_global = y.1,
+     sd_opinion_global = y.2,
+     mean_opinion_group_1 = y.3,
+     var_opinion_group_1 = y.4,
+     sd_opinion_group_1 = y.5,
+     mean_opinion_group_0 = y.6,
+     var_opinion_group_0 = y.7,
+     sd_opinion_group_0 = y.8,
+     mean_opinion_group_neg1 = y.9,
+     var_opinion_group_neg1 = y.10,
+     sd_opinion_group_neg1= y.11, 
+     mean_opinion_left = y.12,
+     var_opinion_left= y.13,
+     sd_opinion_left= y.14,
+     mean_opinion_mid_left= y.15,
+     var_opinion_mid_left = y.16,
+     sd_opinion_mid_left = y.17,
+     mean_opinion_middle = y.18,
+     var_opinion_middle = y.19,
+     sd_opinion_middle = y.20,
+     mean_opinion_mid_right= y.21,
+     var_opinion_mid_right= y.22,
+     sd_opinion_mid_right= y.23,
+     mean_opinion_right = y.24,
+     var_opinion_right = y.25,
+     sd_opinion_right = y.26,
+     polarization_index = y.27,
+     percent_extremists= y.28,
+     percent_extremists_1= y.29,
+     percent_extremists_neg1= y.30,
+     file_id) %>% 
+  filter(
+      ticks < 2921,
+      ticks %% 10 == 0) %>% 
+  mutate(
+    trial = str_extract(file_id, "[^_]+$"),
+    trial = str_extract(trial, ".*(?=\\.csv)")
+  )
+}
+```
+
+
+
+
+
+```{r}
+real_world_pol_index <- read_csv("exam_data/Calculated_polarization_index.csv")
+
+
+files_DK <- list.files("exam_data/Netlogo_output/", pattern = "^exam_v15 Super combined plot_DK.*?\\.csv", full.names = TRUE, recursive = T)
+
+df_DK <- purrr::map_df(files_DK, function(x) {
+	data <- read.csv(x, skip = 46, header=TRUE)
+	cbind(file_id = x, data)
+	})
+
+df_preprocessed_DK <- df_DK %>% 
+  data.preprocessing() %>% 
+  mutate(
+    country = "DK"
+  ) %>% 
+  filter(
+    ticks == 1460 | ticks == 2920
+  )
+
+DK_10_abm <- df_preprocessed_DK %>% 
+  filter(
+    ticks == 1460
+  )
+
+DK_18_abm <- df_preprocessed_DK %>% 
+  filter(
+    ticks == 2920
+  )
+
+
+
+files_FR <- list.files("netlogo_output/ABM_code final running/", pattern = "^exam_v15 Super combined plot_FR.*?\\.csv", full.names = TRUE, recursive = T)
+
+df_FR <- purrr::map_df(files_FR, function(x) {
+	data <- read.csv(x, skip = 46, header=TRUE)
+	cbind(file_id = x, data)
+	})
+
+df_preprocessed_FR <- df_FR %>% 
+  data.preprocessing() %>% 
+  mutate(
+    country = "FR"
+  ) %>% 
+  filter(
+    ticks == 1460 | ticks == 2920
+  )
+
+FR_10_abm <- df_preprocessed_FR %>% 
+  filter(
+    ticks == 1460
+  )
+
+FR_18_abm <- df_preprocessed_FR %>% 
+  filter(
+    ticks == 2920
+  )
+
+
+
+files_GB <- list.files("netlogo_output/ABM_code final running/", pattern = "^exam_v15 Super combined plot_GB.*?\\.csv", full.names = TRUE, recursive = T)
+
+df_GB <- purrr::map_df(files_GB, function(x) {
+	data <- read.csv(x, skip = 46, header=TRUE)
+	cbind(file_id = x, data)
+	})
+
+df_preprocessed_GB <- df_GB %>% 
+  data.preprocessing() %>% 
+  mutate(
+    country = "GB"
+  ) %>% 
+  filter(
+    ticks == 1460 | ticks == 2920
+  )
+
+
+GB_10_abm <- df_preprocessed_GB %>% 
+  filter(
+    ticks == 1460
+  )
+
+GB_18_abm <- df_preprocessed_GB %>% 
+  filter(
+    ticks == 2920
+  )
+
+```
+
+
+
+```{r}
+
+ggplot(DK_10_abm, aes(sample = polarization_index)) +
+        stat_qq() +
+        stat_qq_line(colour = 'red')
+
+shapiro.test(DK_10_abm$polarization_index) # non normal distribution
+
+
+ggplot(DK_18_abm, aes(sample = polarization_index)) +
+        stat_qq() +
+        stat_qq_line(colour = 'red')
+
+shapiro.test(DK_18_abm$polarization_index) # non normal distribution
+
+round(pastecs::stat.desc(cbind(DK_10_abm$polarization_index, DK_18_abm$polarization_index), basic = FALSE, norm = TRUE), digits = 2)
+
+
+
+
+ggplot(FR_10_abm, aes(sample = polarization_index)) +
+        stat_qq() +
+        stat_qq_line(colour = 'red')
+
+shapiro.test(FR_10_abm$polarization_index) # normal distribution
+
+
+ggplot(FR_18_abm, aes(sample = polarization_index)) +
+        stat_qq() +
+        stat_qq_line(colour = 'red')
+
+shapiro.test(FR_18_abm$polarization_index)  # normal distribution
+
+round(pastecs::stat.desc(cbind(FR_10_abm$polarization_index, FR_18_abm$polarization_index), basic = FALSE, norm = TRUE), digits = 2)
+
+
+ggplot(GB_10_abm, aes(sample = polarization_index)) +
+        stat_qq() +
+        stat_qq_line(colour = 'red')
+
+shapiro.test(GB_10_abm$polarization_index) # non normal distribution
+
+
+ggplot(GB_18_abm, aes(sample = polarization_index)) +
+        stat_qq() +
+        stat_qq_line(colour = 'red')
+
+shapiro.test(GB_18_abm$polarization_index) # non normal distribution
+
+round(pastecs::stat.desc(cbind(GB_10_abm$polarization_index, GB_18_abm$polarization_index), basic = FALSE, norm = TRUE), digits = 2)
+
+
+```
+
+
+
+2.4 A one sample t-test: t.test(Measure, mu = 0)
+mu is a number indicating the true value of the mean. One-sample t-test is used to compare the mean of one sample to a known standard (or theoretical/hypothetical) mean (mu). Generally, the theoretical mean comes from either a previous experiment or from specifics of your experimental design. 
+More information: http://www.sthda.com/english/wiki/one-sample-t-test-in-r
+```{r}
+
+yuen.t.test(DK_10_abm$polarization_index, mu = 0.1176931)
+
+yuen.t.test(DK_18_abm$polarization_index, mu = 0.1191010)
+
+t.test(FR_10_abm$polarization_index, mu = 0.1263176)
+
+t.test(FR_18_abm$polarization_index, mu = 0.1168391)
+
+yuen.t.test(GB_10_abm$polarization_index, mu = 0.1018880)
+
+yuen.t.test(GB_18_abm$polarization_index, mu = 0.1005919)
+```
+
+Denmark:
+The polarization index produced by the ABM for Denmark was not normally distributed, therefore we applied a one sample yuen t.test to validate our ABM results with the real world data.
+We can conclude that the mean polarization index in Denmark in 2010 (M=0.27, SD= 0.26) produced by the ABM is not significantly different from the real world polarization index in Denmark in 2010, t(8)=1.216, p = 0.2586.
+The mean polarization index in Denmark in 2018 (M= 0.26, SD= 0.26) produced by the ABM is not significantly different from the real world polarization index in Denmark in 2018, t(8)=0.97314, p = 0.359.
+This means that according to this validation, there is no evidence that the agent-based model's results are significantly different from real world data.
+
+
+France:
+The polarization index produced by the ABM for France was normally distributed, therefore we applied a one sample t.test to validate our ABM results with the real world data.
+We can conclude that the mean polarization index in France in 2010 (M= 0.35, SD= 0.27) produced by the ABM is significantly different from the real world polarization index in France in 2010, t(14)=3.2364, p = 0.005972.
+The mean polarization index in France in 2018 (M= 0.36, SD= 0.27) produced by the ABM is also significantly different from the real world polarization index in France in 2018, t(14)=3.4344, p = 0.004028.
+This means that the agent-based model can not be validated based on real world data.
+
+
+Great Britain:
+The polarization index produced by the ABM for Great Britain was not normally distributed, therefore we applied a one sample yuen t.test to validate our ABM results with the real world data.
+We can conclude that the mean polarization index in Great Britain in 2010 (M=0.01, SD= 0.02)  produced by the ABM is significantly different from the real world polarization index in Great Britain in 2010, t(8)=-432.01, p < 2.2e-16.
+The mean polarization index in Great Britain in 2018 (M=0.01, SD= 0.03) produced by the ABM is also significantly different from the real world polarization index in Great Britain in 2018, t(8)=-422.9, p < 2.2e-16.
+This means that the agent-based model can not be validated based on real world data.
+
+
+
+
+
+
